@@ -13,62 +13,105 @@ const Form = () => {
   });
 
   const [errors, setErrors] = useState({});
-  const [isFormValid, setIsFormValid] = useState(false); 
+  const [isFormValid, setIsFormValid] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData({
-      ...formData,
-      [name]: type === "checkbox" ? checked : value,
-    });
+  const validateField = (name, value) => {
+    let error = "";
+
+    switch (name) {
+      case "fullName":
+        if (value.length < 3) {
+          error = "Full name must be at least 3 characters.";
+        }
+        break;
+      case "email":
+        if (!/\S+@\S+\.\S+/.test(value)) {
+          error = "Email must be valid.";
+        }
+        break;
+      case "password":
+        if (
+          value.length < 8 ||
+          !/\d/.test(value) ||
+          !/[!@#$%^&*]/.test(value)
+        ) {
+          error =
+            "Password must be at least 8 characters, include a number, and a special character.";
+        }
+        break;
+      case "phoneNumber":
+        if (!/^\d{10}$/.test(value)) {
+          error = "Phone number must be exactly 10 digits.";
+        }
+        break;
+      case "age":
+        if (value < 18 || value > 65) {
+          error = "Age must be between 18 and 65.";
+        }
+        break;
+      case "country":
+        if (!value) {
+          error = "Country is required.";
+        }
+        break;
+      case "agreeToTerms":
+        if (!value) {
+          error = "You must agree to the terms.";
+        }
+        break;
+      default:
+        break;
+    }
+
+    return error;
   };
 
   const validate = () => {
     const newErrors = {};
-    if (formData.fullName.length < 3) {
-      newErrors.fullName = "Full name must be at least 3 characters.";
-    }
-    if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = "Email must be valid.";
-    }
-    if (formData.password.length < 8 || !/\d/.test(formData.password) || !/[!@#$%^&*]/.test(formData.password)) {
-      newErrors.password = "Password must be at least 8 characters, include a number, and a special character.";
-    }
-    if (!/^\d{10}$/.test(formData.phoneNumber)) {
-      newErrors.phoneNumber = "Phone number must be exactly 10 digits.";
-    }
-    if (formData.age < 18 || formData.age > 65) {
-      newErrors.age = "Age must be between 18 and 65.";
-    }
-    if (!formData.country) {
-      newErrors.country = "Country is required.";
-    }
-    if (!formData.agreeToTerms) {
-      newErrors.agreeToTerms = "You must agree to the terms.";
+    for (const field in formData) {
+      const error = validateField(field, formData[field]);
+      if (error) newErrors[field] = error;
     }
     return newErrors;
+  };
+
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    const fieldValue = type === "checkbox" ? checked : value;
+
+    setFormData({
+      ...formData,
+      [name]: fieldValue,
+    });
+
+    // Validate the field dynamically and update the errors
+    const fieldError = validateField(name, fieldValue);
+    setErrors((prevErrors) => ({
+      ...prevErrors,
+      [name]: fieldError,
+    }));
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     const validationErrors = validate();
     if (Object.keys(validationErrors).length === 0) {
-      setIsSubmitted(true); 
+      setIsSubmitted(true);
       console.log("Form Data:", formData);
     } else {
       setErrors(validationErrors);
     }
   };
+
   useEffect(() => {
     const validationErrors = validate();
-    setIsFormValid(Object.keys(validationErrors).length === 0); 
+    setIsFormValid(Object.keys(validationErrors).length === 0);
   }, [formData]);
 
   return (
     <div style={{ position: "relative", padding: "20px" }}>
-
-{isSubmitted && (
+      {isSubmitted && (
         <div
           style={{
             position: "absolute",
@@ -87,7 +130,7 @@ const Form = () => {
           <h3>Form Submitted Successfully!</h3>
           <p>Thank you for your submission.</p>
           <button
-            onClick={() => setIsSubmitted(false)} // إغلاق الـ Popup
+            onClick={() => setIsSubmitted(false)}
             style={{
               marginTop: "10px",
               padding: "8px 16px",
@@ -112,6 +155,7 @@ const Form = () => {
           name="fullName"
           value={formData.fullName}
           onChange={handleChange}
+          tooltip="Enter your full name (at least 3 characters)."
           error={errors.fullName}
         />
         <Input
@@ -120,6 +164,7 @@ const Form = () => {
           name="email"
           value={formData.email}
           onChange={handleChange}
+          tooltip="Enter a valid email address (e.g., example@mail.com)."
           error={errors.email}
         />
         <Input
@@ -128,6 +173,7 @@ const Form = () => {
           name="password"
           value={formData.password}
           onChange={handleChange}
+          tooltip="Password must be at least 8 characters, include a number and a special character."
           error={errors.password}
         />
         <Input
@@ -136,6 +182,7 @@ const Form = () => {
           name="phoneNumber"
           value={formData.phoneNumber}
           onChange={handleChange}
+          tooltip="Enter your phone number (10 digits)."
           error={errors.phoneNumber}
         />
         <Input
@@ -144,6 +191,7 @@ const Form = () => {
           name="age"
           value={formData.age}
           onChange={handleChange}
+          tooltip="Enter your age (between 18 and 65)."
           error={errors.age}
         />
         <div style={{ marginBottom: "1rem" }}>
@@ -166,7 +214,9 @@ const Form = () => {
             <option value="Germany">Germany</option>
             <option value="France">France</option>
           </select>
-          {errors.country && <small style={{ color: "red" }}>{errors.country}</small>}
+          {errors.country && (
+            <small style={{ color: "red" }}>{errors.country}</small>
+          )}
         </div>
         <div style={{ marginBottom: "1rem" }}>
           <label>
@@ -179,7 +229,11 @@ const Form = () => {
             />
             Agree to Terms
           </label>
-          {errors.agreeToTerms && <small style={{ color: "red", display: "block" }}>{errors.agreeToTerms}</small>}
+          {errors.agreeToTerms && (
+            <small style={{ color: "red", display: "block" }}>
+              {errors.agreeToTerms}
+            </small>
+          )}
         </div>
         <button
           type="submit"
